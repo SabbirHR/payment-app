@@ -15,10 +15,10 @@ class BikashService extends AbstractGatewayService
     public function __construct()
     {
         parent::__construct();
-        $this->appKey = config('payment.gateways.bikash.app_key', '');
-        $this->appSecret = config('payment.gateways.bikash.app_secret', '');
-        $this->username = config('payment.gateways.bikash.username', '');
-        $this->password = config('payment.gateways.bikash.password', '');
+        $this->appKey = config('payment.gateways.bikash.app_key') ?? '';
+        $this->appSecret = config('payment.gateways.bikash.app_secret') ?? '';
+        $this->username = config('payment.gateways.bikash.username') ?? '';
+        $this->password = config('payment.gateways.bikash.password') ?? '';
         $this->isSandbox = config('payment.gateways.bikash.sandbox', true);
         
         $this->baseUrl = $this->isSandbox 
@@ -60,7 +60,7 @@ class BikashService extends AbstractGatewayService
             'json' => [
                 'mode' => '0011', // 0011 for checkout
                 'payerReference' => (string) $request->customerId,
-                'callbackURL' => url('/api/v1/payment/validate?gateway=bikash'),
+                'callbackURL' => $request->mode === 'web' ? url('/payment/validate?gateway=bikash') : url('/api/v1/payment/validate?gateway=bikash'),
                 'amount' => $request->amount,
                 'currency' => 'BDT',
                 'intent' => 'sale',

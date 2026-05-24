@@ -14,13 +14,16 @@ class PaymentService
     protected $amount;
     protected $invoiceId;
     protected $customerId;
+    protected $mode;
     protected $currency = 'BDT';
     protected $description = '';
+    protected $payable = null;
 
     public function __construct(PaymentGatewayFactory $gatewayFactory, TransactionRepository $repository)
     {
         $this->gatewayFactory = $gatewayFactory;
         $this->repository = $repository;
+        $this->mode = config('payment.mode', 'api');
     }
 
     public function gateway(string $gatewayName): self
@@ -44,6 +47,18 @@ class PaymentService
     public function invoice(int $invoiceId): self
     {
         $this->invoiceId = $invoiceId;
+        return $this;
+    }
+
+    public function payable($model): self
+    {
+        $this->payable = $model;
+        return $this;
+    }
+
+    public function mode(string $mode): self
+    {
+        $this->mode = $mode;
         return $this;
     }
 
@@ -74,7 +89,8 @@ class PaymentService
             $this->description,
             $this->invoiceId,
             $this->customerId,
-            $transactionId
+            $transactionId,
+            $this->mode
         );
 
         $gatewayResponse = $this->currentGateway->pay($requestDto);
@@ -85,6 +101,8 @@ class PaymentService
             'invoice_number' => uniqid('INV-'),
             'total_amount' => $this->amount,
             'status' => 'unpaid',
+            'invoiceable_type' => $this->payable ? get_class($this->payable) : null,
+            'invoiceable_id' => $this->payable ? $this->payable->id : null,
         ]);
 
         // Record pending transaction linked to the invoice
@@ -107,14 +125,14 @@ class PaymentService
         if (!empty($response['data']['transaction_id'])) {
             if ($response['status'] === 'completed') {
                 // Map gateway 'completed' → our 'paid' status
-                $transaction = $this->repository->updateStatus($response['data']['transaction_id'], 'paid');
+                $transaction = $this->repository->updateStatus($response['data']['transaction_id'], 'paid', $response['raw'] ?? null);
                 
                 // Mark invoice as paid (if relationship exists)
                 if ($transaction && $transaction->invoice) {
                     $transaction->invoice->markAsPaid();
                 }
             } elseif ($response['status'] === 'failed') {
-                $transaction = $this->repository->updateStatus($response['data']['transaction_id'], 'failed');
+                $transaction = $this->repository->updateStatus($response['data']['transaction_id'], 'failed', $response['raw'] ?? null);
                 
                 if ($transaction && $transaction->invoice) {
                     $transaction->invoice->markAsFailed();
@@ -129,12 +147,12 @@ class PaymentService
      * Update a transaction status directly (used for failed/cancelled callbacks
      * where the gateway doesn't need server-side verification).
      */
-    public function updateTransactionStatus(string $valId, string $status): void
+    public function updateTransactionStatus(string $valId, string $status, ?array $gatewayResponse = null): void
     {
         $transaction = $this->repository->findByTransactionId($valId);
         Log::info('transaction'. $transaction);
         if ($transaction) {
-            $transaction->updateStatusFromPending($status);
+            $transaction->updateStatusFromPending($status, $gatewayResponse);
 
             // Also update the related invoice
             if ($transaction->invoice) {

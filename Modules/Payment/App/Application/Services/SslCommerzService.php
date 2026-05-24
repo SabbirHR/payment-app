@@ -13,8 +13,8 @@ class SslCommerzService extends AbstractGatewayService
     public function __construct()
     {
         parent::__construct();
-        $this->storeId = config('payment.gateways.sslcommerz.store_id');
-        $this->storePassword = config('payment.gateways.sslcommerz.store_password');
+        $this->storeId = config('payment.gateways.sslcommerz.store_id') ?? '';
+        $this->storePassword = config('payment.gateways.sslcommerz.store_password') ?? '';
         $this->isSandbox = config('payment.gateways.sslcommerz.sandbox', true);
         $this->baseUrl = $this->isSandbox 
             ? 'https://sandbox.sslcommerz.com' 
@@ -30,9 +30,9 @@ class SslCommerzService extends AbstractGatewayService
             'total_amount' => $request->amount,
             'currency' => $request->currency ?? 'BDT',
             'tran_id' => $request->transactionId,
-            'success_url' => url('/api/v1/payment/validate?gateway=sslcommerz'),
-            'fail_url' => url('/api/v1/payment/validate?gateway=sslcommerz&status=FAILED'),
-            'cancel_url' => url('/api/v1/payment/validate?gateway=sslcommerz&status=CANCELLED'),
+            'success_url' => $request->mode === 'web' ? url('/payment/validate?gateway=sslcommerz') : url('/api/v1/payment/validate?gateway=sslcommerz'),
+            'fail_url' => $request->mode === 'web' ? url('/payment/validate?gateway=sslcommerz&status=FAILED') : url('/api/v1/payment/validate?gateway=sslcommerz&status=FAILED'),
+            'cancel_url' => $request->mode === 'web' ? url('/payment/validate?gateway=sslcommerz&status=CANCELLED') : url('/api/v1/payment/validate?gateway=sslcommerz&status=CANCELLED'),
             'cus_name' => 'Customer', // In a real scenario, extract from $request
             'cus_email' => 'customer@example.com',
             'cus_add1' => 'Dhaka',
@@ -51,10 +51,16 @@ class SslCommerzService extends AbstractGatewayService
         ]);
 
         if (isset($response['status']) && $response['status'] === 'SUCCESS') {
+            unset($response['desc']); // Remove massive description array to keep JSON clean
+            
             return [
                 'status' => 'success',
                 'redirect_url' => $response['GatewayPageURL'],
-                'data' => $response
+                'data' => [
+                    'tran_id' => $request->transactionId,
+                    'amount' => $request->amount,
+                    'sessionkey' => $response['sessionkey'] ?? null,
+                ]
             ];
         }
 

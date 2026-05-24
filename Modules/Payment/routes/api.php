@@ -1,7 +1,7 @@
 <?php
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('api/v1/payment')->group(function () {
+Route::prefix('api/v1/payment')->middleware('api')->group(function () {
     // GET test route - open in browser to test SSLCommerz instantly
     Route::get('test-pay', [\Modules\Payment\App\Http\Controllers\PaymentController::class, 'testPay']);
 

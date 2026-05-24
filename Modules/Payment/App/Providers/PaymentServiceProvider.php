@@ -33,6 +33,12 @@ class PaymentServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Modules\Payment\App\Console\PaymentModeCommand::class,
+            ]);
+        }
+
         $this->publishes([
             __DIR__.'/../../config/payment.php' => config_path('payment.php'),
             __DIR__.'/../../.env-payment'      => base_path('.env-payment'),

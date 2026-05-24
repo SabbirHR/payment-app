@@ -16,9 +16,9 @@ class ShurjoPayService extends AbstractGatewayService
     {
         parent::__construct();
 
-        $this->username  = config('payment.gateways.shurjopay.username', '');
-        $this->password  = config('payment.gateways.shurjopay.password', '');
-        $this->prefix    = config('payment.gateways.shurjopay.prefix', 'sp');
+        $this->username  = config('payment.gateways.shurjopay.username') ?? '';
+        $this->password  = config('payment.gateways.shurjopay.password') ?? '';
+        $this->prefix    = config('payment.gateways.shurjopay.prefix') ?? 'sp';
         $this->isSandbox = (bool) config('payment.gateways.shurjopay.sandbox', true);
 
         $this->baseUrl = $this->isSandbox
@@ -59,8 +59,8 @@ class ShurjoPayService extends AbstractGatewayService
             'prefix'             => $this->prefix,
             'token'              => $token,
             'store_id'           => $storeId,
-            'return_url'         => url('/api/v1/payment/validate?gateway=shurjopay'),
-            'cancel_url'         => url('/api/v1/payment/validate?gateway=shurjopay&status=cancelled&val_id=' . $request->transactionId),
+            'return_url'         => $request->mode === 'web' ? url('/payment/validate?gateway=shurjopay') : url('/api/v1/payment/validate?gateway=shurjopay'),
+            'cancel_url'         => $request->mode === 'web' ? url('/payment/validate?gateway=shurjopay&status=cancelled&val_id=' . $request->transactionId) : url('/api/v1/payment/validate?gateway=shurjopay&status=cancelled&val_id=' . $request->transactionId),
             'amount'             => number_format($request->amount, 2, '.', ''),
             'order_id'           => $request->transactionId,
             'currency'           => 'BDT',

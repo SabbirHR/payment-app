@@ -33,8 +33,8 @@ class AamarPayService extends AbstractGatewayService
     {
         parent::__construct();
 
-        $this->storeId      = config('payment.gateways.aamarpay.store_id', '');
-        $this->signatureKey = config('payment.gateways.aamarpay.signature_key', '');
+        $this->storeId      = config('payment.gateways.aamarpay.store_id') ?? '';
+        $this->signatureKey = config('payment.gateways.aamarpay.signature_key') ?? '';
         $this->isSandbox    = (bool) config('payment.gateways.aamarpay.sandbox', true);
 
         // Hardcoded like BikashService – no env needed for base URL
@@ -75,9 +75,9 @@ class AamarPayService extends AbstractGatewayService
             'cus_country'    => 'Bangladesh',
             'cus_phone'      => '01770618575',
             'signature_key'  => $this->signatureKey,
-            'success_url'    => url('/api/v1/payment/validate?gateway=aamarpay'),
-            'fail_url'       => url('/api/v1/payment/validate?gateway=aamarpay&status=failed&mer_txnid=' . $request->transactionId),
-            'cancel_url'     => url('/api/v1/payment/validate?gateway=aamarpay&status=cancelled&mer_txnid=' . $request->transactionId),
+            'success_url'    => $request->mode === 'web' ? url('/payment/validate?gateway=aamarpay') : url('/api/v1/payment/validate?gateway=aamarpay'),
+            'fail_url'       => $request->mode === 'web' ? url('/payment/validate?gateway=aamarpay&status=failed&mer_txnid=' . $request->transactionId) : url('/api/v1/payment/validate?gateway=aamarpay&status=failed&mer_txnid=' . $request->transactionId),
+            'cancel_url'     => $request->mode === 'web' ? url('/payment/validate?gateway=aamarpay&status=cancelled&mer_txnid=' . $request->transactionId) : url('/api/v1/payment/validate?gateway=aamarpay&status=cancelled&mer_txnid=' . $request->transactionId),
             'type'           => 'json',  // tells sandbox to return JSON instead of HTML
         ];
 

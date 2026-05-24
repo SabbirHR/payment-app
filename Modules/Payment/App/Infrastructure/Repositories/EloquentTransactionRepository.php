@@ -16,11 +16,15 @@ class EloquentTransactionRepository implements TransactionRepository
         return PaymentTransaction::where('transaction_id', $transactionId)->first();
     }
 
-    public function updateStatus(string $transactionId, string $status)
+    public function updateStatus(string $transactionId, string $status, ?array $gatewayResponse = null)
     {
         $transaction = $this->findByTransactionId($transactionId);
         if ($transaction) {
-            $transaction->update(['status' => $status]);
+            $data = ['status' => $status];
+            if ($gatewayResponse !== null) {
+                $data['gateway_response'] = $gatewayResponse;
+            }
+            $transaction->update($data);
             return $transaction;
         }
         return null;

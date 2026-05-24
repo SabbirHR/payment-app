@@ -2,6 +2,7 @@
 
 return [
     'default'      => env('PAYMENT_DEFAULT_GATEWAY', 'sslcommerz'),
+    'mode'         => env('PAYMENT_MODE', 'api'),
     'table_prefix' => env('PAYMENT_TABLE_PREFIX', ''),
 
     'gateways' => [

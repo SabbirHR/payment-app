@@ -12,33 +12,41 @@ class PaymentController extends Controller
         $amount = $request->query('amount', 10);
         $gateway = $request->query('gateway', 'sslcommerz');
 
-        // This is a test route to instantly redirect to the payment gateway
-        $response = $paymentService
-            ->gateway($gateway)
-            ->amount((float) $amount)
-            ->customer(['name' => 'Test User', 'email' => 'test@test.com', 'phone' => '01700000000'])
-            ->pay();
+        try {
+            // This is a test route to instantly redirect to the payment gateway
+            $response = $paymentService
+                ->gateway($gateway)
+                ->amount((float) $amount)
+                ->customer(['name' => 'Test User', 'email' => 'test@test.com', 'phone' => '01700000000'])
+                ->pay();
 
-        if (!empty($response->redirectUrl)) {
-            return redirect($response->redirectUrl);
+            if (!empty($response->redirectUrl)) {
+                return redirect($response->redirectUrl);
+            }
+
+            return response()->json($response->data);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 400);
         }
-
-        return response()->json($response->data);
     }
 
     public function pay(Request $request, PaymentService $paymentService)
     {
         $gateway = $request->input('gateway', config('payment.default'));
 
-        // Example integration
-        $response = $paymentService
-            ->gateway($gateway)
-            ->amount($request->input('amount', 100))
-            ->invoice($request->input('invoice_id', 1))
-            ->customer($request->user())
-            ->pay();
+        try {
+            // Example integration
+            $response = $paymentService
+                ->gateway($gateway)
+                ->amount($request->input('amount', 100))
+                ->invoice($request->input('invoice_id', 1))
+                ->customer($request->user())
+                ->pay();
 
-        return response()->json($response);
+            return response()->json($response);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 400);
+        }
     }
 
     public function validateT(Request $request, PaymentService $paymentService)
@@ -81,7 +89,7 @@ class PaymentController extends Controller
         // Handle failed callbacks — update transaction in DB
         if ($status === 'failed' || $payStatus === 'failed') {
             if ($valId) {
-                $paymentService->gateway($gateway)->updateTransactionStatus($valId, 'failed');
+                $paymentService->gateway($gateway)->updateTransactionStatus($valId, 'failed', $request->all());
             }
             return response()->json(['message' => 'Payment Failed', 'status' => 'failed'], 400);
         }
@@ -89,8 +97,7 @@ class PaymentController extends Controller
         // Handle cancelled callbacks — update transaction in DB
         if ($status === 'cancel' || $status === 'cancelled' || $payStatus === 'cancelled') {
             if ($valId) {
-
-                $paymentService->gateway($gateway)->updateTransactionStatus($valId, 'cancelled');
+                $paymentService->gateway($gateway)->updateTransactionStatus($valId, 'cancelled', $request->all());
             }
             return response()->json(['message' => 'Payment Cancelled by User', 'status' => 'cancelled'], 400);
         }

@@ -16,10 +16,10 @@ class NagadService extends AbstractGatewayService
     public function __construct()
     {
         parent::__construct();
-        $this->merchantId = config('payment.gateways.nagad.merchant_id', '');
-        $this->merchantNumber = config('payment.gateways.nagad.merchant_number', '');
-        $this->publicKey = config('payment.gateways.nagad.public_key', '');
-        $this->privateKey = config('payment.gateways.nagad.private_key', '');
+        $this->merchantId = config('payment.gateways.nagad.merchant_id') ?? '';
+        $this->merchantNumber = config('payment.gateways.nagad.merchant_number') ?? '';
+        $this->publicKey = config('payment.gateways.nagad.public_key') ?? '';
+        $this->privateKey = config('payment.gateways.nagad.private_key') ?? '';
         $this->isSandbox = config('payment.gateways.nagad.sandbox', true);
 
         $this->baseUrl = $this->isSandbox
@@ -91,7 +91,7 @@ class NagadService extends AbstractGatewayService
             'json' => [
                 'sensitiveData' => $paymentDetailsEncrypted,
                 'signature' => $paymentSignature,
-                'merchantCallbackURL' => url('/api/v1/payment/validate?gateway=nagad'),
+                'merchantCallbackURL' => $request->mode === 'web' ? url('/payment/validate?gateway=nagad') : url('/api/v1/payment/validate?gateway=nagad'),
             ]
         ]);
 

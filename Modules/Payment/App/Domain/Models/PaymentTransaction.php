@@ -25,10 +25,14 @@ class PaymentTransaction extends Model
         return $this->belongsTo(PaymentInvoice::class, 'invoice_id');
     }
 
-    public function updateStatusFromPending(string $status)
+    public function updateStatusFromPending(string $status, ?array $gatewayResponse = null)
     {
         if ($this->status === 'pending') {
-            $this->update(['status' => $status]);
+            $data = ['status' => $status];
+            if ($gatewayResponse !== null) {
+                $data['gateway_response'] = $gatewayResponse;
+            }
+            $this->update($data);
         }
     }
 }
