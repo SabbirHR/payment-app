@@ -1,0 +1,10 @@
+{
+  "name": "payment",
+  "alias": "payment",
+  "description": "Laravel payment gateway module",
+  "active": true,
+  "order": 500,
+  "providers": [
+    "Modules\\Payment\\App\\Providers\\PaymentServiceProvider"
+  ]
+}

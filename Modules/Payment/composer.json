@@ -1,0 +1,17 @@
+{
+    "name": "your-vendor/payment",
+    "description": "Laravel payment‑gateway module",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Modules\\Payment\\": "App/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Payment\\App\\Providers\\PaymentServiceProvider"
+            ]
+        }
+    }
+}
